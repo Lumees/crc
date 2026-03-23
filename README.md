@@ -53,19 +53,19 @@ Verified against published CRC check values ("123456789" → 0xCBF43926 for CRC-
 ## Architecture
 
 ```
-           ┌───────────────────────────────────────────────┐
-           │                   crc_top                      │
-           │                                                 │
-  s_data ──►│  Config latch    ┌────────────────────────┐    │
-  s_valid ──►│  (poly, init,   │      crc_core           │    │
-  s_last  ──►│   xor, refl)   │                          │    │
-  s_cfg   ──►│                 │  crc_reg ← crc_step()   │    │
-  start   ──►│  FSM: IDLE →   │  (XOR matrix, 1 byte/   │──► crc_o
-             │  RUN → FINAL   │   cycle, combinational)  │    done_o
-             │  → DONE        │  + reflect_out + xorout  │    │
-             │                 └────────────────────────┘    │
+             ┌──────────────────────────────────────────────┐
+             │                   crc_top                    │
+             │                                              │
+  s_data  ──►│  Config latch  ┌────────────────────────┐    │
+  s_valid ──►│  (poly, init,  │      crc_core          │    │
+  s_last  ──►│   xor, refl)   │                        │    │
+  s_cfg   ──►│                │  crc_reg ← crc_step()  │    │
+  start   ──►│  FSM: IDLE →   │  (XOR matrix, 1 byte/  │──► crc_o
+             │  RUN → FINAL   │   cycle, combinational)│    done_o
+             │  → DONE        │  + reflect_out + xorout│    │
+             │                └────────────────────────┘    │
              │  Latency: N+2 cycles (N data bytes + 2)      │
-             └───────────────────────────────────────────────┘
+             └──────────────────────────────────────────────┘
 ```
 
 **crc_step() function:** Processes DATA_W bits combinationally: for each bit, XOR with polynomial if MSB ⊕ data_bit = 1, then shift left. This is the standard CRC unrolled inner loop.
@@ -185,6 +185,7 @@ crc/
 ## Roadmap
 
 ### v1.1
+- [ ] CTRL[abort] bit to cancel in-progress computation (currently software must always send DIN_LAST)
 - [ ] CRC-64 FPGA validation (currently model-only)
 - [ ] Multi-byte processing (DATA_W=16/32 for higher throughput)
 - [ ] Interrupt-driven AXI4-Lite operation

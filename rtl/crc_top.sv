@@ -13,6 +13,12 @@
 // =============================================================================
 // FSM: S_IDLE → S_RUN → S_FINAL → S_DONE → S_IDLE
 // One DATA_W-bit chunk consumed per clock in S_RUN.
+//
+// Software contract:
+//   Every computation MUST be terminated by a DIN_LAST write. If software
+//   starts a computation (CTRL.start) and never sends DIN_LAST, the FSM
+//   stays in S_RUN indefinitely with no timeout or abort. This is by design
+//   for a simple byte-stream engine. A CTRL[abort] bit is planned for v1.1.
 // =============================================================================
 
 `timescale 1ns/1ps
