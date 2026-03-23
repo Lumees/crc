@@ -1,0 +1,64 @@
+# ===========================================================================
+# CRC IP — cocotb + Verilator simulation Makefile
+# ===========================================================================
+# Usage:
+#   make -f Makefile.cocotb                  # default: CRC-32, crc_top
+#   make -f Makefile.cocotb CRC_W=16         # CRC-16
+#   make -f Makefile.cocotb CRC_W=8          # CRC-8
+# ===========================================================================
+
+TOPLEVEL_LANG := verilog
+SIM           := verilator
+
+CRC_W  ?= 32
+DATA_W ?= 8
+
+TOPLEVEL ?= crc_top
+MODULE   ?= test_crc_top
+
+RTL_DIR   := $(realpath ../rtl)
+TB_DIR    := $(realpath ../tb/directed)
+MODEL_DIR := $(realpath ../model)
+
+VERILOG_SOURCES := \
+	$(RTL_DIR)/crc_pkg.sv \
+	$(RTL_DIR)/crc_core.sv \
+	$(RTL_DIR)/crc_top.sv
+
+COMPILE_ARGS += +define+CRC_PKG_CRC_W=$(CRC_W)
+COMPILE_ARGS += +define+CRC_PKG_DATA_W=$(DATA_W)
+COMPILE_ARGS += --timing
+COMPILE_ARGS += -Wno-WIDTHTRUNC -Wno-WIDTHEXPAND -Wno-CASEINCOMPLETE
+
+export CRC_W
+export DATA_W
+export PYTHONPATH := $(TB_DIR):$(MODEL_DIR):$(PYTHONPATH)
+
+SIM_BUILD := sim_build_crc$(CRC_W)
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
+
+.PHONY: sim-crc8 sim-crc16 sim-crc32 sim-all sim-axil sim-wb
+
+sim-crc8:
+	$(MAKE) -f Makefile.cocotb CRC_W=8
+
+sim-crc16:
+	$(MAKE) -f Makefile.cocotb CRC_W=16
+
+sim-crc32:
+	$(MAKE) -f Makefile.cocotb CRC_W=32
+
+sim-axil:
+	$(MAKE) -f Makefile.cocotb \
+		TOPLEVEL=crc_axil MODULE=test_crc_axil \
+		VERILOG_SOURCES="$(RTL_DIR)/crc_pkg.sv $(RTL_DIR)/crc_core.sv $(RTL_DIR)/crc_top.sv $(RTL_DIR)/crc_axil.sv" \
+		SIM_BUILD=sim_build_axil_crc$(CRC_W)
+
+sim-wb:
+	$(MAKE) -f Makefile.cocotb \
+		TOPLEVEL=crc_wb MODULE=test_crc_wb \
+		VERILOG_SOURCES="$(RTL_DIR)/crc_pkg.sv $(RTL_DIR)/crc_core.sv $(RTL_DIR)/crc_top.sv $(RTL_DIR)/crc_wb.sv" \
+		SIM_BUILD=sim_build_wb_crc$(CRC_W)
+
+sim-all: sim-crc8 sim-crc16 sim-crc32
